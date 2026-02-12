@@ -62,6 +62,7 @@ INTERVAL="1h"      # 메트릭 수집 간격 (1h, 12h, 1d 등)
 | AppService | App Service 이름 (없으면 N/A) |
 | AppService_AvgCPUTime(sec/hour) | App Service의 시간당 평균 CPU 시간 (초) + Plan 내 비율 (%) |
 | AppService_AvgMemory(MB/hour) | App Service의 시간당 평균 메모리 (MB) + Plan 내 비율 (%) |
+| Billing_Allocation% | 과금 분배 비율 (CPU%와 Memory%의 평균) |
 
 ## 과금 분배 활용 방안
 
@@ -69,16 +70,20 @@ INTERVAL="1h"      # 메트릭 수집 간격 (1h, 12h, 1d 등)
 Plan에 App Service가 없는 경우, 해당 Plan의 비용을 단독으로 할당
 
 ### 2. App Service별 비용 분배
-같은 Plan 내 여러 App Service가 있는 경우, 이미 계산된 비율을 직접 사용:
+같은 Plan 내 여러 App Service가 있는 경우, **Billing_Allocation%** 컬럼을 직접 사용:
+
+**계산 방식:**
+```
+Billing_Allocation% = (CPU% + Memory%) / 2
+```
 
 **예시 (linuxplan - S1 Standard, 월 $70 가정):**
-- WeatherSidecar: CPU 99%, Memory 99% → $70 × 99% = $69.30
-- jpsamplewebapp: CPU 1%, Memory 1% → $70 × 1% = $0.70
+- WeatherSidecar: CPU 99%, Memory 99% → Billing 99% → $70 × 99% = $69.30
+- jpsamplewebapp: CPU 1%, Memory 1% → Billing 1% → $70 × 1% = $0.70
 
-또는 CPU와 Memory의 가중 평균 사용:
-```
-비용 = Plan 비용 × (CPU 비율 × 50% + Memory 비율 × 50%)
-```
+**다른 예시:**
+- App A: CPU 40%, Memory 80% → Billing 60% → 비용의 60%
+- App B: CPU 60%, Memory 20% → Billing 40% → 비용의 40%
 
 ## 주의사항
 
@@ -92,9 +97,9 @@ Plan에 App Service가 없는 경우, 해당 Plan의 비용을 단독으로 할�
 ## 예시 출력
 
 ```
-SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour)
-xxx-xxx-xxx,MySubscription,Appservice,linuxplan,S1,Standard,2,38.79,82.26,WeatherSidecar,"27.12 (99.00%)","61.76 (99.00%)"
-xxx-xxx-xxx,MySubscription,Appservice,linuxplan,S1,Standard,2,38.79,82.26,jpsamplewebapp,"0.01 (1.00%)","0.02 (1.00%)"
+SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),Billing_Allocation%
+xxx-xxx-xxx,MySubscription,Appservice,linuxplan,S1,Standard,2,38.79,82.26,WeatherSidecar,"27.12 (99.00%)","61.76 (99.00%)",99.00
+xxx-xxx-xxx,MySubscription,Appservice,linuxplan,S1,Standard,2,38.79,82.26,jpsamplewebapp,"0.01 (1.00%)","0.02 (1.00%)",1.00
 ```
 
 **데이터 해석:**
@@ -102,10 +107,12 @@ xxx-xxx-xxx,MySubscription,Appservice,linuxplan,S1,Standard,2,38.79,82.26,jpsamp
 - 7일(168시간) 총합: 27.12 × 168 = 4,556초 = 1.26시간
 - 이는 Azure Portal의 "CPU Time Sum (7 days): 1.26 hours"와 일치
 
-**과금 분배 예시:**
+**과금 분배 예시 (Billing_Allocation% 사용):**
 linuxplan의 월 비용이 $70라면:
 - WeatherSidecar: $70 × 99% = $69.30
 - jpsamplewebapp: $70 × 1% = $0.70
+
+합계: $69.30 + $0.70 = $70.00 ✅
 
 ## 요구사항
 - Azure CLI 설치 및 로그인 필요

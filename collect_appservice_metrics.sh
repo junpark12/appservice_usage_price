@@ -22,7 +22,7 @@ echo "Output File: $OUTPUT_CSV"
 echo ""
 
 # Create CSV header
-echo "SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour)" > "$OUTPUT_CSV"
+echo "SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),Billing_Allocation%" > "$OUTPUT_CSV"
 
 # Get current subscription info
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
@@ -88,7 +88,7 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
     
     if [ "$APP_COUNT" -eq 0 ]; then
         # No apps in this plan, write plan-only row
-        echo "$SUBSCRIPTION_ID,$SUBSCRIPTION_NAME,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,N/A,N/A,N/A" >> "$OUTPUT_CSV"
+        echo "$SUBSCRIPTION_ID,$SUBSCRIPTION_NAME,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,N/A,N/A,N/A,N/A" >> "$OUTPUT_CSV"
     else
         # First pass: collect all app metrics
         > "$TEMP_APP_DATA"  # Clear temp file
@@ -142,6 +142,7 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
                 CPU_PERCENT=$(echo "scale=2; ($APP_CPU_RAW / $TOTAL_CPU) * 100" | bc)
                 APP_CPU_DISPLAY="$APP_CPU_RAW ($CPU_PERCENT%)"
             else
+                CPU_PERCENT=0
                 APP_CPU_DISPLAY="N/A"
             fi
             
@@ -150,13 +151,21 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
                 MEMORY_PERCENT=$(echo "scale=2; ($APP_MEMORY_RAW / $TOTAL_MEMORY) * 100" | bc)
                 APP_MEMORY_DISPLAY="$APP_MEMORY_RAW ($MEMORY_PERCENT%)"
             else
+                MEMORY_PERCENT=0
                 APP_MEMORY_DISPLAY="N/A"
             fi
             
-            echo "      $APP_NAME - CPU: $APP_CPU_DISPLAY, Memory: $APP_MEMORY_DISPLAY"
+            # Calculate Billing Allocation (average of CPU and Memory percentages)
+            if [[ "$APP_CPU_DISPLAY" != "N/A" && "$APP_MEMORY_DISPLAY" != "N/A" ]]; then
+                BILLING_ALLOCATION=$(echo "scale=2; ($CPU_PERCENT + $MEMORY_PERCENT) / 2" | bc)
+            else
+                BILLING_ALLOCATION="N/A"
+            fi
+            
+            echo "      $APP_NAME - CPU: $APP_CPU_DISPLAY, Memory: $APP_MEMORY_DISPLAY, Billing: $BILLING_ALLOCATION%"
             
             # Write to CSV with quotes for fields containing parentheses
-            echo "$SUBSCRIPTION_ID,$SUBSCRIPTION_NAME,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$APP_NAME,\"$APP_CPU_DISPLAY\",\"$APP_MEMORY_DISPLAY\"" >> "$OUTPUT_CSV"
+            echo "$SUBSCRIPTION_ID,$SUBSCRIPTION_NAME,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$APP_NAME,\"$APP_CPU_DISPLAY\",\"$APP_MEMORY_DISPLAY\",$BILLING_ALLOCATION" >> "$OUTPUT_CSV"
         done < "$TEMP_APP_DATA"
     fi
     

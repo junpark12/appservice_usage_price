@@ -1,6 +1,11 @@
-SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour)
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,Appservice,linuxplan,S1,Standard,2,38.78,82.26,WeatherSidecar,27.14 (99.00%),61.76 (99.00%)
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,Appservice,linuxplan,S1,Standard,2,38.78,82.26,jpsamplewebapp,0.01 (0%),0.02 (0%)
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,ai_monitor,ai-monitor-plan,B1,Basic,1,18.05,76.44,N/A,N/A,N/A
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,rg-mcpserver-functions,EastUS2LinuxDynamicPlan,Y1,Dynamic,0,N/A,N/A,N/A,N/A,N/A
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,functiontest,ASP-functiontest-9af9,B1,Basic,1,9.81,75.89,N/A,N/A,N/A
+SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),Billing_Allocation%
+12345678-1234-1234-1234-123456789abc,Production-Subscription,rg-production,prod-appservice-plan,P1v2,PremiumV2,3,45.20,68.50,ProductAPI,"35.40 (65.00%)","128.50 (60.00%)",62.50
+12345678-1234-1234-1234-123456789abc,Production-Subscription,rg-production,prod-appservice-plan,P1v2,PremiumV2,3,45.20,68.50,OrderService,"19.10 (35.00%)","85.70 (40.00%)",37.50
+87654321-4321-4321-4321-cba987654321,Development-Subscription,rg-development,dev-appservice-plan,B2,Basic,1,22.30,55.80,DevWebApp,"18.20 (100.00%)","45.30 (100.00%)",100.00
+87654321-4321-4321-4321-cba987654321,Development-Subscription,rg-test,test-appservice-plan,S1,Standard,2,12.50,42.10,TestAPI,"8.40 (80.00%)","32.10 (85.00%)",82.50
+87654321-4321-4321-4321-cba987654321,Development-Subscription,rg-test,test-appservice-plan,S1,Standard,2,12.50,42.10,TestUI,"2.10 (20.00%)","5.70 (15.00%)",17.50
+abcdef12-3456-7890-abcd-ef1234567890,Staging-Subscription,rg-staging,staging-dynamic-plan,Y1,Dynamic,0,N/A,N/A,N/A,N/A,N/A,N/A
+abcdef12-3456-7890-abcd-ef1234567890,Staging-Subscription,rg-microservices,microservices-plan,P2v3,PremiumV3,2,58.70,75.20,AuthService,"42.30 (40.00%)","156.80 (38.00%)",39.00
+abcdef12-3456-7890-abcd-ef1234567890,Staging-Subscription,rg-microservices,microservices-plan,P2v3,PremiumV3,2,58.70,75.20,PaymentService,"31.70 (30.00%)","125.40 (30.00%)",30.00
+abcdef12-3456-7890-abcd-ef1234567890,Staging-Subscription,rg-microservices,microservices-plan,P2v3,PremiumV3,2,58.70,75.20,NotificationService,"21.20 (20.00%)","83.60 (20.00%)",20.00
+abcdef12-3456-7890-abcd-ef1234567890,Staging-Subscription,rg-microservices,microservices-plan,P2v3,PremiumV3,2,58.70,75.20,AnalyticsService,"10.60 (10.00%)","49.80 (12.00%)",11.00
