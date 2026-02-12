@@ -55,7 +55,6 @@ INTERVAL="1h"      # 메트릭 수집 간격 (1h, 12h, 1d 등)
 | 컬럼명 | 설명 |
 |--------|------|
 | SubscriptionId | Azure 구독 ID |
-| SubscriptionName | Azure 구독 이름 |
 | ResourceGroup | 리소스 그룹명 |
 | AppServicePlan | App Service Plan 이름 |
 | PlanSKU | Plan SKU (B1, S1, P1v2 등) |
@@ -103,9 +102,9 @@ Billing_Allocation% = (CPU% + Memory% + Data Out%) / 3
 ## 예시 출력
 
 ```
-SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,Plan_AvgDataOut(MB),AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),AppService_AvgDataOut(MB/hour),Billing_Allocation%
-xxx-xxx-xxx,MySubscription,Appservice,linuxplan,S1,Standard,2,38.79,82.26,2450.00,ProductAPI,"35.40 (65.00%)","128.50 (60.00%)","543.20 (70.00%)",65.00
-xxx-xxx-xxx,MySubscription,Appservice,linuxplan,S1,Standard,2,38.79,82.26,2450.00,OrderService,"19.10 (35.00%)","85.70 (40.00%)","232.80 (30.00%)",35.00
+SubscriptionId,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,Plan_AvgDataOut(MB),AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),AppService_AvgDataOut(MB/hour),Billing_Allocation%
+xxx-xxx-xxx,Appservice,linuxplan,S1,Standard,2,38.79,82.26,2450.00,ProductAPI,"35.40 (65.00%)","128.50 (60.00%)","543.20 (70.00%)",65.00
+xxx-xxx-xxx,Appservice,linuxplan,S1,Standard,2,38.79,82.26,2450.00,OrderService,"19.10 (35.00%)","85.70 (40.00%)","232.80 (30.00%)",35.00
 ```
 
 **데이터 해석:**

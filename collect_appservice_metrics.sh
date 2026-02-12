@@ -22,7 +22,7 @@ echo "Output File: $OUTPUT_CSV"
 echo ""
 
 # Create CSV header
-echo "SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,Plan_AvgDataOut(MB),AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),AppService_AvgDataOut(MB/hour),Billing_Allocation%" > "$OUTPUT_CSV"
+echo "SubscriptionId,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,Plan_AvgDataOut(MB),AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),AppService_AvgDataOut(MB/hour),Billing_Allocation%" > "$OUTPUT_CSV"
 
 # Get current subscription info
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
@@ -100,7 +100,7 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
     
     if [ "$APP_COUNT" -eq 0 ]; then
         # No apps in this plan, write plan-only row
-        echo "$SUBSCRIPTION_ID,$SUBSCRIPTION_NAME,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,N/A,N/A,N/A,N/A,N/A" >> "$OUTPUT_CSV"
+        echo "$SUBSCRIPTION_ID,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,N/A,N/A,N/A,N/A,N/A" >> "$OUTPUT_CSV"
     else
         # First pass: collect all app metrics
         > "$TEMP_APP_DATA"  # Clear temp file
@@ -198,7 +198,7 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
             echo "      $APP_NAME - CPU: $APP_CPU_DISPLAY, Memory: $APP_MEMORY_DISPLAY, Data Out: $APP_DATAOUT_DISPLAY, Billing: $BILLING_ALLOCATION%"
             
             # Write to CSV with quotes for fields containing parentheses
-            echo "$SUBSCRIPTION_ID,$SUBSCRIPTION_NAME,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,$APP_NAME,\"$APP_CPU_DISPLAY\",\"$APP_MEMORY_DISPLAY\",\"$APP_DATAOUT_DISPLAY\",$BILLING_ALLOCATION" >> "$OUTPUT_CSV"
+            echo "$SUBSCRIPTION_ID,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,$APP_NAME,\"$APP_CPU_DISPLAY\",\"$APP_MEMORY_DISPLAY\",\"$APP_DATAOUT_DISPLAY\",$BILLING_ALLOCATION" >> "$OUTPUT_CSV"
         done < "$TEMP_APP_DATA"
     fi
     
