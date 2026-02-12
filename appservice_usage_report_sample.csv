@@ -1,0 +1,6 @@
+SubscriptionId,SubscriptionName,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour)
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,Appservice,linuxplan,S1,Standard,2,38.78,82.26,WeatherSidecar,27.14 (99.00%),61.76 (99.00%)
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,Appservice,linuxplan,S1,Standard,2,38.78,82.26,jpsamplewebapp,0.01 (0%),0.02 (0%)
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,ai_monitor,ai-monitor-plan,B1,Basic,1,18.05,76.44,N/A,N/A,N/A
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,rg-mcpserver-functions,EastUS2LinuxDynamicPlan,Y1,Dynamic,0,N/A,N/A,N/A,N/A,N/A
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,contoso-subscription,functiontest,ASP-functiontest-9af9,B1,Basic,1,9.81,75.89,N/A,N/A,N/A
