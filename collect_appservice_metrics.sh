@@ -12,6 +12,8 @@ INTERVAL="1h"
 OUTPUT_CSV="appservice_usage_report_$(date +%Y%m%d_%H%M%S).csv"
 START_TIME=$(date -u -d "$DAYS_BACK days ago" '+%Y-%m-%dT%H:%M:%SZ')
 END_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+PRICING_FILE="$(dirname "$0")/appservice_pricing.conf"
+USD_TO_KRW=1400  # Exchange rate: 1 USD = 1400 KRW
 
 echo "========================================="
 echo "App Service Usage Report Generator"
@@ -22,7 +24,7 @@ echo "Output File: $OUTPUT_CSV"
 echo ""
 
 # Create CSV header
-echo "SubscriptionId,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_AvgCPU%,Plan_AvgMemory%,Plan_AvgDataOut(MB),AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),AppService_AvgDataOut(MB/hour),Billing_Allocation%" > "$OUTPUT_CSV"
+echo "SubscriptionId,ResourceGroup,AppServicePlan,PlanSKU,PlanTier,PlanCapacity,Plan_Monthly_Cost_USD,Plan_Monthly_Cost_KRW,Plan_AvgCPU%,Plan_AvgMemory%,Plan_AvgDataOut(MB),AppService,AppService_AvgCPUTime(sec/hour),AppService_AvgMemory(MB/hour),AppService_AvgDataOut(MB/hour),Billing_Allocation%,AppService_Monthly_Cost_USD,AppService_Monthly_Cost_KRW" > "$OUTPUT_CSV"
 
 # Get current subscription info
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
@@ -30,6 +32,17 @@ SUBSCRIPTION_NAME=$(az account show --query name -o tsv)
 
 echo "Analyzing Subscription: $SUBSCRIPTION_NAME ($SUBSCRIPTION_ID)"
 echo ""
+
+# Function to get price from pricing file
+get_sku_price() {
+    local sku="$1"
+    local os="$2"
+    if [ -f "$PRICING_FILE" ]; then
+        grep "^${sku}|${os}|" "$PRICING_FILE" | cut -d'|' -f3 || echo "0"
+    else
+        echo "0"
+    fi
+}
 
 # Get all App Service Plans in the subscription
 echo "Fetching App Service Plans..."
@@ -51,7 +64,16 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
     PLAN_TIER=$(echo "$plan" | jq -r '.tier')
     PLAN_CAPACITY=$(echo "$plan" | jq -r '.capacity // "N/A"')
     
-    echo "Processing Plan: $PLAN_NAME (RG: $PLAN_RG)"
+    # Get Plan kind (linux or windows)
+    PLAN_KIND=$(az appservice plan show --ids "$PLAN_ID" --query "kind" -o tsv 2>/dev/null || echo "windows")
+    # Extract OS from kind (e.g., "linux" or "app" for windows)
+    if [[ "$PLAN_KIND" == *"linux"* ]]; then
+        PLAN_OS="linux"
+    else
+        PLAN_OS="windows"
+    fi
+    
+    echo "Processing Plan: $PLAN_NAME (RG: $PLAN_RG, OS: $PLAN_OS)"
     
     # Get App Service Plan level metrics (CPU Percentage)
     echo "  - Fetching Plan CPU metrics..."
@@ -91,6 +113,13 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
     
     echo "  - Plan Average CPU: $PLAN_CPU%, Memory: $PLAN_MEMORY%, Data Out: ${PLAN_DATAOUT}MB"
     
+    # Get pricing information
+    UNIT_PRICE=$(get_sku_price "$PLAN_SKU" "$PLAN_OS")
+    PLAN_TOTAL_COST_USD=$(awk -v price="$UNIT_PRICE" -v cap="$PLAN_CAPACITY" 'BEGIN {printf "%.2f", price * cap}')
+    PLAN_TOTAL_COST_KRW=$(awk -v cost="$PLAN_TOTAL_COST_USD" -v rate="$USD_TO_KRW" 'BEGIN {printf "%.0f", cost * rate}')
+    
+    echo "  - Plan Monthly Cost: \$${PLAN_TOTAL_COST_USD} USD (₩${PLAN_TOTAL_COST_KRW} KRW) - $PLAN_OS"
+    
     # Get all App Services in this Plan
     echo "  - Fetching App Services in this Plan..."
     APPS=$(az webapp list --query "[?appServicePlanId=='$PLAN_ID'].{name:name,id:id}" -o json)
@@ -100,7 +129,7 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
     
     if [ "$APP_COUNT" -eq 0 ]; then
         # No apps in this plan, write plan-only row
-        echo "$SUBSCRIPTION_ID,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,N/A,N/A,N/A,N/A,N/A" >> "$OUTPUT_CSV"
+        echo "$SUBSCRIPTION_ID,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_TOTAL_COST_USD,$PLAN_TOTAL_COST_KRW,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,N/A,N/A,N/A,N/A,N/A,N/A,N/A" >> "$OUTPUT_CSV"
     else
         # First pass: collect all app metrics
         > "$TEMP_APP_DATA"  # Clear temp file
@@ -195,10 +224,19 @@ echo "$PLANS" | jq -c '.[]' | while IFS= read -r plan; do
                 BILLING_ALLOCATION="N/A"
             fi
             
-            echo "      $APP_NAME - CPU: $APP_CPU_DISPLAY, Memory: $APP_MEMORY_DISPLAY, Data Out: $APP_DATAOUT_DISPLAY, Billing: $BILLING_ALLOCATION%"
+            # Calculate App Service cost based on billing allocation
+            if [[ "$BILLING_ALLOCATION" != "N/A" ]]; then
+                APP_COST_USD=$(awk -v total="$PLAN_TOTAL_COST_USD" -v alloc="$BILLING_ALLOCATION" 'BEGIN {printf "%.2f", total * alloc / 100}')
+                APP_COST_KRW=$(awk -v cost="$APP_COST_USD" -v rate="$USD_TO_KRW" 'BEGIN {printf "%.0f", cost * rate}')
+            else
+                APP_COST_USD="N/A"
+                APP_COST_KRW="N/A"
+            fi
+            
+            echo "      $APP_NAME - CPU: $APP_CPU_DISPLAY, Memory: $APP_MEMORY_DISPLAY, Data Out: $APP_DATAOUT_DISPLAY, Billing: $BILLING_ALLOCATION%, Cost: \$${APP_COST_USD} (₩${APP_COST_KRW})"
             
             # Write to CSV with quotes for fields containing parentheses
-            echo "$SUBSCRIPTION_ID,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,$APP_NAME,\"$APP_CPU_DISPLAY\",\"$APP_MEMORY_DISPLAY\",\"$APP_DATAOUT_DISPLAY\",$BILLING_ALLOCATION" >> "$OUTPUT_CSV"
+            echo "$SUBSCRIPTION_ID,$PLAN_RG,$PLAN_NAME,$PLAN_SKU,$PLAN_TIER,$PLAN_CAPACITY,$PLAN_TOTAL_COST_USD,$PLAN_TOTAL_COST_KRW,$PLAN_CPU,$PLAN_MEMORY,$PLAN_DATAOUT,$APP_NAME,\"$APP_CPU_DISPLAY\",\"$APP_MEMORY_DISPLAY\",\"$APP_DATAOUT_DISPLAY\",$BILLING_ALLOCATION,$APP_COST_USD,$APP_COST_KRW" >> "$OUTPUT_CSV"
         done < "$TEMP_APP_DATA"
     fi
     

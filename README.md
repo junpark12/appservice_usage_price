@@ -15,6 +15,7 @@
 - **Data Out (MB)**: 7일 평균 시간당 송신 데이터량 (MB)
 - **SKU 정보**: Plan의 가격 계층 (B1, S1, P1v2 등)
 - **Capacity**: 인스턴스 수
+- **월 비용**: USD 및 KRW (Linux/Windows 구분)
 
 ### App Service 수준
 - **CPU 시간 (초/시간)**: 시간당 평균 CPU Time + Plan 내 비율 (%)
@@ -24,6 +25,8 @@
   - 형식: "61.76 (99.00%)" - 시간당 평균 61.76MB 사용, Plan 내 전체 메모리의 99% 차지
 - **Data Out (MB/시간)**: 시간당 평균 송신 데이터량 + Plan 내 비율 (%)
   - 형식: "543.20 (65.00%)" - 시간당 평균 543.20MB 송신, Plan 내 전체 Data Out의 65% 차지
+- **과금 분배 비율**: CPU, Memory, Data Out 비율의 평균
+- **월 비용**: USD 및 KRW (Billing_Allocation% 기반 계산)
 
 **비율 계산 방식:**
 - 같은 Plan 내 모든 App Service의 리소스 사용량 합계 대비 각 App의 비율
@@ -48,6 +51,17 @@
 ```bash
 DAYS_BACK=7        # 데이터 수집 기간 (기본: 7일)
 INTERVAL="1h"      # 메트릭 수집 간격 (1h, 12h, 1d 등)
+USD_TO_KRW=1400    # USD/KRW 환율 (기본: 1400)
+```
+
+### 4. 가격 정보 업데이트
+`appservice_pricing.conf` 파일에서 SKU별 가격 수정 가능:
+```bash
+# Format: SKU|OS|Monthly_Price_USD
+S1|linux|69.35
+S1|windows|70.00
+P2v3|linux|226.30
+P2v3|windows|260.00
 ```
 
 ## CSV 파일 구조
